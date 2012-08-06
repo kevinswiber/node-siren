@@ -1,0 +1,20 @@
+{
+  "name": "siren",
+  "version": "0.0.1-alpha",
+  "description": "A client for the Siren hypermedia type.",
+  "main": "siren.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kevinswiber/node-siren"
+  },
+  "keywords": [
+    "siren",
+    "hypermedia",
+    "rest"
+  ],
+  "author": "Kevin Swiber",
+  "license": "MIT/X11"
+}
