@@ -42,10 +42,14 @@ Siren.prototype.action = function(action, parameters, callback) {
 };
 
 Siren.prototype.split = function(obj) {
-  if (obj.rel) { obj.rel = obj.rel.split(/\s/); }
-  if (obj.class) { obj.class = obj.class.split(/\s/); }
+  if (obj.rel && !isArray(obj.rel)) { obj.rel = obj.rel.split(/\s/); }
+  if (obj.class && !isArray(obj.rel)) { obj.class = obj.class.split(/\s/); }
 
   return obj;
+}
+
+function isArray(obj) {
+  return (obj && Object.prototype.toString.call(obj) === '[object Array]');
 }
 
 module.exports = new Siren();
