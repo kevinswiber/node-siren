@@ -9,6 +9,7 @@ Siren.prototype.select = select;
 Siren.prototype.fetch = function(entity, callback) {
   if (!entity.href) {
     callback(null, entity);
+    return;
   }
 
   this.request(entity.href, function(err, res, body) {
