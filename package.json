@@ -18,7 +18,7 @@
   "author": "Kevin Swiber",
   "license": "MIT/X11",
   "dependencies": {
-    "request": "~2.10.0",
-    "refine": "0.0.1-alpha"
+    "refine": "0.0.1-alpha",
+    "request-caching": "0.0.1"
   }
 }

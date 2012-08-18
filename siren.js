@@ -1,9 +1,23 @@
-var request = require('request');
+var request = require('request-caching');
 var select = require('refine').select;
 
-function Siren() { };
+function Siren() { 
+  this._cache = new request.MemoryCache();
+};
 
-Siren.prototype.request = request;
+Siren.prototype.request = function(uri, options, callback) {
+  options = options || {};
+
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+
+  options.cache = this._cache;
+
+  return request(uri, options, callback);
+};
+
 Siren.prototype.select = select;
 
 Siren.prototype.fetch = function(entity, callback) {
@@ -36,7 +50,7 @@ Siren.prototype.action = function(action, parameters, callback) {
     options.uri = options.uri + '?' + qs;
   }
 
-  this.request(options, function(err, res, body) {
+  this.request(options.uri, options, function(err, res, body) {
     callback(err, body ? JSON.parse(body) : null);
   });
 };
