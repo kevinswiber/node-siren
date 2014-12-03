@@ -94,6 +94,10 @@ Siren.prototype.monitor = function() {
       env.response.on('error', function(err) {
         observer.onError(err);
       });
+
+      return function() {
+        env.response.close();
+      };
     });
   });
 

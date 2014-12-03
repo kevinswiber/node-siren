@@ -34,4 +34,5 @@ siren(subject)
 siren(subject)
   .link('http://rels.zettajs.io/object-stream', 'message')
   .monitor()
+  .take(1)
   .subscribe(console.log);
