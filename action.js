@@ -1,4 +1,5 @@
 var querystring = require('querystring');
+var url = require('url');
 
 var Action = module.exports = function(client, data) {
   this._client = client;

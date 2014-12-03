@@ -1,4 +1,3 @@
-var url = require('url');
 var revolt = require('revolt');
 var jsonParser = require('revolt-json-parser');
 var Rx = require('rx');
