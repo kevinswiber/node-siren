@@ -1,69 +1,79 @@
-var request = require('request-caching');
-var select = require('refine').select;
+var revolt = require('revolt');
+var jsonParser = require('revolt-json-parser');
+var Rx = require('rx');
 
-function Siren() { 
-  this._cache = new request.MemoryCache();
-};
-
-Siren.prototype.request = function(uri, options, callback) {
-  options = options || {};
-
-  if (typeof options === 'function') {
-    callback = options;
-    options = {};
+var Siren = module.exports = function() {
+  if (!(this instanceof Siren)) {
+    return new Siren();
   }
 
-  options.cache = this._cache;
-
-  return request(uri, options, callback);
+  this.client = revolt().use(jsonParser);
+  this.current = this.client;
 };
 
-Siren.prototype.select = select;
+Siren.prototype.load = function(url) {
+  this.current = this.client.get(url);
 
-Siren.prototype.fetch = function(entity, callback) {
-  if (!entity.href) {
-    callback(null, entity);
-    return;
-  }
+  return this;
+};
 
-  this.request(entity.href, function(err, res, body) {
-    callback(err, body ? JSON.parse(body) : null);
+Siren.prototype.link = function(rel, title) {
+  var self = this;
+  this.current = this.current.flatMap(function(env) {
+    var entity = env.response.body;
+
+    var links = entity.links.filter(function(link) {
+      return link.rel.indexOf(rel) > -1
+        && (!title || link.title === title);
+    }).map(function(link) {
+      return self.client.get(link.href);
+    });
+
+    return Rx.Observable.concat(links);
   });
+
+  return this;
 };
 
-Siren.prototype.action = function(action, parameters, callback) {
-  var hiddenFields = this.select(action.fields).where('type').equals('hidden');
+Siren.prototype.entity = function(filter) {
+  var self = this;
 
-  if (hiddenFields.length) {
-    parameters.concat(hiddenFields);
-  }
+  this.current = this.current.flatMap(function(env) {
+    var entity = env.response.body;
+    var entities = entity.entities.filter(filter).map(function(e) {
+      var link = e.links.filter(function(link) {
+        return link.rel.indexOf('self') > -1;
+      })[0];
 
-  var options = {
-    uri: action.href,
-    method: action.method,
-  };
+      return self.client.get(link.href);
+    });
 
-  if (['POST', 'PUT'].indexOf(options.method) > -1) {
-    options.form = parameters;
-  } else {
-    var qs = require('querystring').stringify(parameters);
-    options.uri = options.uri + '?' + qs;
-  }
 
-  this.request(options.uri, options, function(err, res, body) {
-    callback(err, body ? JSON.parse(body) : null);
+    return Rx.Observable.concat(entities);
   });
+
+  return this;
 };
 
-Siren.prototype.split = function(obj) {
-  if (obj.rel && !isArray(obj.rel)) { obj.rel = obj.rel.split(/\s/); }
-  if (obj.class && !isArray(obj.rel)) { obj.class = obj.class.split(/\s/); }
+Siren.prototype.monitor = function() {
+  this.current = this.current.flatMap(function(env) {
+    return Rx.Observable.create(function(observer) {
+      env.response.on('message', function(msg) {
+        observer.onNext(msg);
+      });
+      env.response.on('close', function() {
+        observer.onCompleted();
+      });
+      env.response.on('error', function(err) {
+        observer.onError(err);
+      });
+    });
+  });
 
-  return obj;
-}
+  return this;
+};
 
-function isArray(obj) {
-  return (obj && Object.prototype.toString.call(obj) === '[object Array]');
-}
+Siren.prototype.subscribe = function(observer) {
+  return this.current.subscribe(observer);
+};
 
-module.exports = new Siren();
