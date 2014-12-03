@@ -1,20 +1,26 @@
-var querystring = require('querystring');
 var url = require('url');
 var revolt = require('revolt');
 var jsonParser = require('revolt-json-parser');
 var Rx = require('rx');
+var Action = require('./action');
 
-var Siren = module.exports = function() {
+var Siren = module.exports = function(current) {
   if (!(this instanceof Siren)) {
-    return new Siren();
+    return new Siren(current);
   }
 
   this.client = revolt().use(jsonParser);
-  this.current = this.client;
+  this.current = current;
 };
 
 Siren.prototype.load = function(url) {
-  this.current = this.client.get(url);
+  var self = this;
+
+  this.current = this.client.get(url)
+    .map(function(env) {
+      env.siren = self;
+      return env;
+    });
 
   return this;
 };
@@ -95,87 +101,56 @@ Siren.prototype.monitor = function() {
   return this;
 };
 
-Siren.prototype.subscribe = function(observer) {
-  return this.current.subscribe(observer);
-};
+var subscriptionFns = ['subscribe', 'subscribeOnNext', 'subscribeOnError',
+  'subscribeOnCompleted', 'subscribeOn'];
 
-function Action(client, data) {
-  this._client = client;
-  this._data = data;
-};
-
-Action.prototype.available = function(name) {
-  var fields = this._data.fields.filter(function(field) {
-    return field.name === name;
-  })
-
-  return fields.length === 1;
-};
-
-Action.prototype.set = function(name, value) {
-  if (this._data.fields) {
-    var fields = this._data.fields.filter(function(field) {
-      return field.name === name;
-    })
-
-    if (fields.length === 1) {
-      fields[0].value = value;
-    }
+subscriptionFns.forEach(function(m) {
+  Siren.prototype[m] = function() {
+    var args = Array.prototype.slice.call(arguments);
+    return this.current[m].apply(this.current, args);
   }
-};
+});
 
-Action.prototype.get = function(name) {
-  var fields = this._data.fields.filter(function(field) {
-    return field.name === name;
-  })
+var operators = [
+  'amb', 'and', 'asObservable', 'average', 'buffer',
+  'bufferWithCount', 'bufferWithTime', 'bufferWithTimeOrCount',
+  'catch', 'catchError', 'combineLatest', 'concat', 'concatAll',
+  'concatMap', 'concatMapObserver', 'connect', 'contains',
+  'controlled', 'count', 'debounce', 'debounceWithSelector',
+  'defaultIfEmpty', 'delay', 'delayWithSelector', 'dematerialize',
+  'distinct', 'distinctUntilChanged', 'do', 'doOnNext',
+  'doOnError', 'doOnCompleted', 'doWhile', 'elementAt',
+  'elementAtOrDefault', 'every', 'expand', 'filter', 'finally',
+  'ensure', 'find', 'findIndex', 'first', 'firstOrDefault',
+  'flatMap', 'flatMapObserver', 'flatMapLatest', 'forkJoin',
+  'groupBy', 'groupByUntil', 'groupJoin', 'ignoreElements',
+  'indexOf', 'isEmpty', 'join', 'jortSort', 'jortSortUntil',
+  'last', 'lastOrDefault', 'let', 'letBind', 'manySelect', 'map',
+  'max', 'maxBy', 'merge', 'mergeAll', 'min', 'minBy', 'multicast',
+  'observeOn', 'onErrorResumeNext', 'pairwise', 'partition',
+  'pausable', 'pausableBuffered', 'pluck', 'publish', 'publishLast',
+  'publishValue', 'share', 'shareReplay', 'shareValue', 'refCount',
+  'reduce', 'repeat', 'replay', 'retry', 'sample', 'scan', 'select',
+  'selectConcat', 'selectConcatObserver', 'selectMany',
+  'selectManyObserver', 'selectSwitch', 'sequenceEqual', 'single',
+  'singleOrDefault', 'skip', 'skipLast', 'skipLastWithTime',
+  'skipUntil', 'skipUntilWithTime', 'skipWhile', 'some', 'startWith',
+  /*'subscribe', 'subscribeOnNext', 'subscribeOnError',
+  'subscribeOnCompleted', 'subscribeOn', */ 'sum', 'switch',
+  'switchLatest', 'take', 'takeLast', 'takeLastBuffer',
+  'takeLastBufferWithTime', 'takeLastWithTime', 'takeUntil',
+  'takeUntilWithTime', 'takeWhile', 'tap', 'tapOnNext', 'tapOnError',
+  'tapOnCompleted', 'throttleFirst', 'throttleWithTimeout',
+  'timeInterval', 'timeout', 'timeoutWithSelector', 'timestamp',
+  'toArray', 'toMap', 'toSet', 'transduce', 'where', 'window',
+  'windowWithCount', 'windowWithTime', 'windowWithTimeOrCount', 'zip'
+]
 
-  if (fields.length === 1) {
-    return fields[0];
-  }
-};
+operators.forEach(function(m) {
+  Siren.prototype[m] = function() {
+    var args = Array.prototype.slice.call(arguments);
+    this.current = this.current[m].apply(this.current, args);
 
-Action.prototype.submit = function() {
-  var method = this._data.method || 'GET';
-  var href = this._data.href;
-  var type = this._data.type || 'application/x-www-form-urlencoded';
-  var body;
-
-  if (this._data.fields) {
-    var obj = {};
-    var actionData = this._data.fields.forEach(function(field) {
-      obj[field.name] = field.value;
-    });
-
-
-    if (method.toUpperCase() === 'GET') {
-      var parsed = url.parse(href);
-      var q = parsed.query || {};
-      Object.keys(obj).forEach(function(key) {
-        q[key] = obj[key];
-      });
-
-      parsed.query = q;
-
-      href = url.format(parsed);
-    } else {
-      if (type === 'application/x-www-form-urlencoded') {
-        body = querystring.stringify(obj);
-      } else if (type === 'application/json') {
-        body = JSON.stringify(obj);
-      } else {
-        body = new Buffer(obj);
-      }
-    }
-  }
-
-  var options = {
-    method: method,
-    uri: href,
-    headers: {
-      'Content-Type': type
-    },
-    body: body
+    return this;
   };
-
-  return this._client.request(options);
-};
+});
