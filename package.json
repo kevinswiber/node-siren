@@ -18,10 +18,8 @@
   "author": "Kevin Swiber",
   "license": "MIT/X11",
   "dependencies": {
-    "refine": "0.0.1-alpha",
-    "request-caching": "0.0.1",
-    "revolt": "^0.5.0",
+    "revolt": ">=0.5.0",
     "rx": "^2.3.18",
-    "revolt-json-parser": "^0.1.0"
+    "revolt-json-parser": ">=0.2.0"
   }
 }
