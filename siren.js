@@ -29,14 +29,22 @@ Siren.prototype.link = function(rel, title) {
   this.current = this.current.flatMap(function(env) {
     var entity = env.response.body;
 
-    var links = entity.links.filter(function(link) {
-      return link.rel.indexOf(rel) > -1
-        && (!title || link.title === title);
-    }).map(function(link) {
-      return self.client.get(link.href);
-    });
+    if (entity.links) {
+      var links = entity.links.filter(function(link) {
+        return link.rel.indexOf(rel) > -1
+          && (!title || link.title === title);
+      }).map(function(link) {
+        return self.client.get(link.href);
+      });
 
-    return Rx.Observable.concat(links);
+      if (links.length) {
+        return Rx.Observable.concat(links);
+      } else {
+        return Rx.Observable.throw(new Error('link not found'));
+      }
+    } else {
+      return Rx.Observable.throw(new Error('link not found'));
+    }
   });
 
   return this;
@@ -67,6 +75,8 @@ Siren.prototype.action = function(name, cb) {
 
   this.current = this.current.flatMap(function(env) {
     var entity = env.response.body;
+    var actual = entity.actions[0].name;
+
     if (entity.actions) {
       var actions = entity.actions.filter(function(action) {
         return action.name === name;
@@ -75,7 +85,11 @@ Siren.prototype.action = function(name, cb) {
       if (actions.length) {
         var action = new Action(self.client, actions[0]);
         return cb(action);
+      } else {
+        return Rx.Observable.throw(new Error('action not found'));
       }
+    } else {
+      return Rx.Observable.throw(new Error('action not found'));
     }
   });
 
