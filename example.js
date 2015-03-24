@@ -12,6 +12,12 @@ siren()
   .subscribe(display);
 
 siren(display)
+  .link('http://rels.zettajs.io/object-stream', 'message')
+  .monitor()
+  .take(1)
+  .subscribe(console.log);
+
+siren(display)
   .action('change', function(action) {
     action.set('message', 'Hello world: ' + Date.now());
     return action.submit();
@@ -19,9 +25,3 @@ siren(display)
   .subscribe(function(env) {
     console.log(env.response.statusCode === 200 ? 'success' : 'failure');
   });
-
-siren(display)
-  .link('http://rels.zettajs.io/object-stream', 'message')
-  .monitor()
-  .take(1)
-  .subscribe(console.log);

@@ -38,7 +38,7 @@ Siren.prototype.link = function(rel, title) {
       });
 
       if (links.length) {
-        return Rx.Observable.concat(links);
+        return Rx.Observable.merge(links);
       } else {
         return Rx.Observable.throw(new Error('link not found'));
       }
@@ -64,7 +64,7 @@ Siren.prototype.entity = function(filter) {
     });
 
 
-    return Rx.Observable.concat(entities);
+    return Rx.Observable.merge(entities);
   });
 
   return this;
