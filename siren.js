@@ -26,7 +26,7 @@ Siren.prototype.load = function(url) {
 
 Siren.prototype.link = function(rel, title) {
   var self = this;
-  this.current = this.current.flatMap(function(env) {
+  var current = this.current.flatMap(function(env) {
     var entity = env.response.body;
 
     if (entity.links) {
@@ -47,13 +47,13 @@ Siren.prototype.link = function(rel, title) {
     }
   });
 
-  return this;
+  return new Siren(current);
 };
 
 Siren.prototype.entity = function(filter) {
   var self = this;
 
-  this.current = this.current.flatMap(function(env) {
+  var current = this.current.flatMap(function(env) {
     var entity = env.response.body;
     var entities = entity.entities.filter(filter).map(function(e) {
       var link = e.links.filter(function(link) {
@@ -67,13 +67,13 @@ Siren.prototype.entity = function(filter) {
     return Rx.Observable.merge(entities);
   });
 
-  return this;
+  return new Siren(current);
 };
 
 Siren.prototype.action = function(name, cb) {
   var self = this;
 
-  this.current = this.current.flatMap(function(env) {
+  var current = this.current.flatMap(function(env) {
     var entity = env.response.body;
     var actual = entity.actions[0].name;
 
@@ -93,11 +93,11 @@ Siren.prototype.action = function(name, cb) {
     }
   });
 
-  return this;
+  return new Siren(current);
 };
 
 Siren.prototype.monitor = function() {
-  this.current = this.current.flatMap(function(env) {
+  var current = this.current.flatMap(function(env) {
     return Rx.Observable.create(function(observer) {
       env.response.on('message', function(msg) {
         observer.onNext(msg);
@@ -115,7 +115,7 @@ Siren.prototype.monitor = function() {
     });
   });
 
-  return this;
+  return new Siren(current);
 };
 
 var subscriptionFns = ['subscribe', 'subscribeOnNext', 'subscribeOnError',
@@ -166,8 +166,8 @@ var operators = [
 operators.forEach(function(m) {
   Siren.prototype[m] = function() {
     var args = Array.prototype.slice.call(arguments);
-    this.current = this.current[m].apply(this.current, args);
+    var current = this.current[m].apply(this.current, args);
 
-    return this;
+    return new Siren(current);
   };
 });
