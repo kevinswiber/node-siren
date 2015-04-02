@@ -1,6 +1,6 @@
 {
   "name": "siren",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A reactive client for the Siren hypermedia type.",
   "main": "siren.js",
   "scripts": {
