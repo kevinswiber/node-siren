@@ -1,6 +1,6 @@
 {
   "name": "siren",
-  "version": "0.4.0",
+  "version": "0.4.0-revolt0.9",
   "description": "A reactive client for the Siren hypermedia type.",
   "main": "siren.js",
   "scripts": {
@@ -18,7 +18,7 @@
   "author": "Kevin Swiber",
   "license": "MIT/X11",
   "dependencies": {
-    "revolt": ">=0.8.0",
+    "revolt": "^0.9.0",
     "rx": "^2.3.18",
     "revolt-json-parser": ">=0.2.0"
   }
